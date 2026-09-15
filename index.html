@@ -107,12 +107,49 @@
     .shake{animation:shake .32s ease}
     @keyframes shake{25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
 
-    /* reveal */
+    /* cinematic reveal */
     #fadeLayer{
-      position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:30;transition:opacity 1.2s ease;
+      position:fixed;inset:0;z-index:30;pointer-events:none;
+      opacity:0;overflow:hidden;background:transparent;
+      backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px);
+      transition:opacity .35s ease;
     }
-    #fadeLayer.show{opacity:1;pointer-events:auto}
-    #fadeLayer.dim{opacity:.92}
+    #fadeLayer::before{
+      content:"";position:absolute;left:50%;top:50%;
+      width:36vmax;height:36vmax;border-radius:50%;
+      transform:translate(-50%,-50%) scale(.02) rotate(0deg);
+      background:
+        radial-gradient(circle at center,#000 0 47%,transparent 48%),
+        repeating-conic-gradient(from 0deg,#000 0deg 19deg,rgba(0,0,0,.1) 19deg 31deg);
+      filter:blur(10px);
+      opacity:.12;
+    }
+    #fadeLayer::after{
+      content:"";position:absolute;inset:-30%;
+      background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(0,0,0,.95) 0deg 20deg,rgba(0,0,0,.18) 20deg 35deg);
+      transform:scale(.08) rotate(0deg);border-radius:50%;filter:blur(18px);opacity:0;
+    }
+    #fadeLayer.enter{opacity:1;pointer-events:auto;animation:layerBlurIn 3s cubic-bezier(.55,.02,.25,1) forwards}
+    #fadeLayer.enter::before{animation:rollBlack 3s cubic-bezier(.42,0,.18,1) forwards}
+    #fadeLayer.enter::after{animation:spiralBlack 3s cubic-bezier(.45,0,.18,1) forwards}
+    #fadeLayer.hold{opacity:1;background:#000;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+    #fadeLayer.hold::before,#fadeLayer.hold::after{opacity:0}
+    #fadeLayer.exit{opacity:0;background:#000;pointer-events:auto;transition:opacity 1.8s cubic-bezier(.22,.61,.36,1)}
+    @keyframes layerBlurIn{
+      0%{backdrop-filter:blur(0);-webkit-backdrop-filter:blur(0)}
+      38%{backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+      100%{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+    }
+    @keyframes rollBlack{
+      0%{transform:translate(-50%,-50%) scale(.02) rotate(0);opacity:.08;filter:blur(14px)}
+      35%{opacity:.4}
+      100%{transform:translate(-50%,-50%) scale(9.5) rotate(760deg);opacity:1;filter:blur(2px)}
+    }
+    @keyframes spiralBlack{
+      0%{transform:scale(.08) rotate(0);opacity:0;filter:blur(22px)}
+      22%{opacity:.28}
+      100%{transform:scale(2.2) rotate(-560deg);opacity:1;filter:blur(3px)}
+    }
 
     /* unlocked page */
     #unlocked{z-index:15;display:block;overflow-y:auto;overflow-x:hidden;background:linear-gradient(180deg,#0f0d10 0 18%, transparent 18%), linear-gradient(180deg,#fffaf6 0%,#fffef6 100%);padding:0}
@@ -475,10 +512,11 @@
     }
     function playSuccessSound(){
       ensureAudio();
-      [523,659,784,1046].forEach((f,i)=>playTone(f, .16, 'triangle', .09, i*.09));
-      // clap-like bursts
-      for(let i=0;i<14;i++) playNoiseBurst(.16 + i*.045, .04, .055 + (i%3)*.008);
-      speakLine('Congratulations!');
+      // bright rising "yay" style chime + applause burst
+      [523,659,784,988,1175].forEach((f,i)=>playTone(f, .18, i<3?'triangle':'sine', .085, i*.075));
+      [784,988,1318].forEach((f,i)=>playTone(f, .22, 'triangle', .055, .34+i*.06));
+      for(let i=0;i<18;i++) playNoiseBurst(.20 + i*.038, .045, .045 + (i%4)*.006);
+      speakLine('Yayyyyy!');
     }
     function playFailureSound(){
       ensureAudio();
@@ -584,20 +622,31 @@
 
     continueBtn.addEventListener('click', async () => {
       ensureAudio();
-      fadeLayer.classList.add('show');
-      requestAnimationFrame(() => fadeLayer.classList.add('dim'));
+      // Start audio inside the tap gesture so mobile browsers allow it.
       playSongSnippet();
+
+      // 0–3s: soft blur + curved rolling black takeover.
+      fadeLayer.className = 'enter';
+
+      // At 3s: screen is completely black. Switch page behind it.
       setTimeout(() => {
+        fadeLayer.className = 'hold';
         locks.classList.remove('active');
         unlocked.classList.add('active');
-      }, 4000);
+        unlocked.scrollTo({top:0, behavior:'auto'});
+      }, 3000);
+
+      // 3–6s: hold full black. Then reveal smoothly.
       setTimeout(() => {
-        fadeLayer.classList.remove('dim');
-        setTimeout(() => fadeLayer.classList.remove('show'), 1300);
-        unlocked.scrollTo({top:0, behavior:'smooth'});
+        fadeLayer.className = 'hold exit';
+      }, 6000);
+
+      // Fade-off completes after 1.8s.
+      setTimeout(() => {
+        fadeLayer.className = '';
         launchConfetti(130);
         dropFlowers(18,false);
-      }, 4300);
+      }, 7900);
     });
   </script>
 </body>
