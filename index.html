@@ -222,6 +222,7 @@
 <body>
   <div id="fadeLayer" aria-hidden="true"></div>
   <audio id="mainSong" preload="auto" src="assets/tum-millay.mp3"></audio>
+  <audio id="yaySound" preload="auto" src="assets/children-yay.mp3"></audio>
 
   <section class="screen active" id="splash" aria-label="Birthday splash screen">
     <img class="sticker floatA desktop-only" src="assets/cat-03.png" alt="" style="width:132px;left:4%;top:8%">
@@ -437,6 +438,7 @@
     const unlocked = document.getElementById('unlocked');
     const fadeLayer = document.getElementById('fadeLayer');
     const song = document.getElementById('mainSong');
+    const yaySound = document.getElementById('yaySound');
     const continueBtn = document.getElementById('continueBtn');
     const state = {one:false, two:false};
 
@@ -511,12 +513,12 @@
       src.stop(audioCtx.currentTime + when + duration);
     }
     function playSuccessSound(){
-      ensureAudio();
-      // bright rising "yay" style chime + applause burst
-      [523,659,784,988,1175].forEach((f,i)=>playTone(f, .18, i<3?'triangle':'sine', .085, i*.075));
-      [784,988,1318].forEach((f,i)=>playTone(f, .22, 'triangle', .055, .34+i*.06));
-      for(let i=0;i<18;i++) playNoiseBurst(.20 + i*.038, .045, .045 + (i%4)*.006);
-      speakLine('Yayyyyy!');
+      try{
+        yaySound.pause();
+        yaySound.currentTime = 0;
+        yaySound.volume = 1;
+        yaySound.play().catch(()=>{});
+      }catch(e){}
     }
     function playFailureSound(){
       ensureAudio();
