@@ -8,10 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Noto+Nastaliq+Urdu:wght@500;700&family=Playfair+Display:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="preload" href="assets/tum-millay.mp3" as="audio">
-  <link rel="preload" href="assets/children-yay.mp3" as="audio">
-  <link rel="preload" href="assets/memory-01.webp" as="image">
-  <link rel="preload" href="assets/obs-01.webp" as="image">
+  <link rel="preload" href="assets/cover-ref.webp" as="image" fetchpriority="high">
+  <link rel="preload" href="assets/birthday-cat.webp" as="image">
   <style>
     :root{
       --bg:#960008;
@@ -24,11 +22,11 @@
       --pink2:#ff6b97;
       --gold:#f7cf6d;
       --shadow:0 18px 42px rgba(37,0,2,.28);
-      --appW:min(92vw,430px);
+      --appW:min(90vw,400px);
       --puzzle-ratio: 9 / 16;
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{margin:0;padding:0;overflow-x:hidden;touch-action:manipulation}
+    html,body{margin:0;padding:0;overflow-x:hidden;touch-action:pan-y}
     body{
       font-family:"Baloo 2",system-ui,sans-serif;
       color:#fff;
@@ -54,7 +52,7 @@
 
     .app{min-height:100svh; display:flex; justify-content:center; align-items:flex-start; padding:24px 10px 90px; position:relative}
     .screen{display:none; width:var(--appW)}
-    .screen.active{display:block; animation:screenIn .45s ease both}
+    .screen.active{display:block; animation:screenIn .38s ease both}
     @keyframes screenIn{from{opacity:0; transform:translateY(14px) scale(.98)}to{opacity:1; transform:none}}
 
     .card{
@@ -116,7 +114,7 @@
     .polaroid-back,.polaroid-back2,.memory-card{position:absolute; inset:0; border-radius:26px; background:#fff; box-shadow:0 14px 28px rgba(73,0,8,.16)}
     .polaroid-back{transform:translate(-10px,12px) rotate(-5deg); opacity:.88}
     .polaroid-back2{transform:translate(10px,11px) rotate(5deg); opacity:.92}
-    .memory-card{padding:14px 14px 18px; overflow:hidden; transition:transform .22s ease, opacity .22s ease}
+    .memory-card{padding:14px 14px 18px; overflow:hidden; transition:transform .3s cubic-bezier(.2,.8,.2,1), opacity .22s ease; will-change:transform,opacity; cursor:grab}
     .memory-card.dragging{transition:none}
     .memory-photo{width:100%; height:300px; border-radius:24px; overflow:hidden; background:#faf7f8; border:1px solid #f2d6dc; box-shadow:inset 0 0 0 1px rgba(255,255,255,.8)}
     .memory-photo img{width:100%; height:100%; object-fit:cover; object-position:center; display:block; border-radius:24px}
@@ -128,14 +126,14 @@
     .obs-wrap::before,.obs-wrap::after{content:""; position:absolute; left:0; right:0; height:52px; z-index:5; pointer-events:none}
     .obs-wrap::before{top:0; background:linear-gradient(180deg, rgba(255,250,250,.95), rgba(255,250,250,0))}
     .obs-wrap::after{bottom:0; background:linear-gradient(180deg, rgba(255,250,250,0), rgba(255,250,250,.95))}
-    .obs-stage{position:relative; height:470px; overflow:hidden}
-    .obs-slide{position:absolute; left:50%; top:50%; width:72%; height:78%; border-radius:32px; overflow:hidden; background:#fff; box-shadow:0 22px 36px rgba(73,0,8,.18); transition:transform .35s ease, opacity .35s ease, filter .35s ease; transform-origin:center center; border:2px solid #f7d2d8}
+    .obs-stage{position:relative; height:470px; overflow:hidden; touch-action:pan-y; contain:layout paint}
+    .obs-slide{position:absolute; left:50%; top:50%; width:72%; height:78%; border-radius:32px; overflow:hidden; background:#fff; box-shadow:0 22px 36px rgba(73,0,8,.18); transition:transform .42s cubic-bezier(.2,.75,.2,1), opacity .32s ease, filter .32s ease; transform-origin:center center; border:2px solid #f7d2d8; will-change:transform,opacity}
     .obs-slide img{width:100%; height:100%; object-fit:cover; display:block}
     .obs-slide.active{transform:translate(-50%,-50%) scale(1) rotate(0); opacity:1; z-index:3; filter:none}
     .obs-slide.prev{transform:translate(-104%,-47%) scale(.82) rotate(-12deg); opacity:.55; z-index:2; filter:blur(1.6px)}
     .obs-slide.next{transform:translate(4%,-47%) scale(.82) rotate(12deg); opacity:.55; z-index:2; filter:blur(1.6px)}
-    .obs-slide.hidden-left{transform:translate(-165%,-48%) scale(.65) rotate(-18deg); opacity:0}
-    .obs-slide.hidden-right{transform:translate(60%,-48%) scale(.65) rotate(18deg); opacity:0}
+    .obs-slide.hidden-left{transform:translate(-165%,-48%) scale(.65) rotate(-18deg); opacity:0; pointer-events:none}
+    .obs-slide.hidden-right{transform:translate(60%,-48%) scale(.65) rotate(18deg); opacity:0; pointer-events:none}
     .obs-count{margin-top:6px; text-align:center; font-weight:800; color:#9b1b3b}
     .funky-nav{display:flex; justify-content:center; gap:12px; margin-top:10px}
     .funky-btn{width:58px; height:58px; border-radius:22px; border:none; color:#9b0027; background:linear-gradient(180deg,#fff,#ffe3ea); box-shadow:0 10px 22px rgba(73,0,8,.12); font-size:1.5rem; font-weight:900}
@@ -145,11 +143,12 @@
     .preview-card{position:absolute; inset:0; background:#fff; display:flex; align-items:center; justify-content:center; animation:popIn .4s ease both}
     .preview-card img{width:100%; height:100%; object-fit:contain; display:block}
     .puzzle-grid{position:absolute; inset:0; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:3px; background:#fff}
-    .piece{position:relative; overflow:hidden; border:none; padding:0; background:#fff; border-radius:8px; touch-action:none; user-select:none; cursor:grab; transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease}
+    .piece{position:relative; overflow:hidden; border:none; padding:0; background:#fff; border-radius:8px; touch-action:none; user-select:none; cursor:grab; transition:transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .18s ease, opacity .18s ease}
     .piece img{position:absolute; width:300%; height:300%; max-width:none; max-height:none; object-fit:fill; display:block; pointer-events:none}
     .piece.over{box-shadow:inset 0 0 0 4px #ff709d}
     .piece.drag-source{opacity:.35}
     .piece.tap-selected{box-shadow:inset 0 0 0 4px #ff709d}
+    .piece.swapping{transform:scale(.9); box-shadow:0 10px 22px rgba(105,0,8,.24)}
     .ghost{position:fixed; width:96px; height:120px; border-radius:14px; pointer-events:none; z-index:55; overflow:hidden; box-shadow:0 18px 28px rgba(0,0,0,.22); transform:translate(-50%,-50%) scale(1.05)}
     .ghost img{position:absolute; width:300%; height:300%; max-width:none; max-height:none; object-fit:fill}
     .game-meta{display:flex; justify-content:space-between; gap:8px; margin-top:10px; color:#8a4e55; font-weight:800; font-size:1rem}
@@ -195,8 +194,9 @@
     @keyframes drop{to{transform:translate3d(var(--dx),112svh,0) rotate(var(--rot)); opacity:1}}
     @keyframes popIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
 
-    @media (max-width:390px){
-      .memory-card-wrap{height:410px}.memory-photo{height:280px}.gallery-item img{height:290px}.sticker{width:72px;height:72px}
+    @media (max-width:430px){
+      .app{padding:16px 8px 64px}.card{border-radius:28px;padding:20px 13px 18px}.title{font-size:clamp(1.9rem,8.5vw,2.55rem)}
+      .memory-card-wrap{width:min(92%,280px);height:390px}.memory-photo{height:265px}.obs-stage{height:410px}.gallery-item img{height:280px}.sticker{width:68px;height:68px}.btn{min-height:50px;font-size:1.08rem}.funky-btn{width:52px;height:52px}
     }
   </style>
 </head>
@@ -210,15 +210,16 @@
     <div id="stars"></div>
   </div>
 
-  <audio id="yayAudio" src="assets/children-yay.mp3" preload="auto" playsinline></audio>
-  <audio id="songAudio" src="assets/tum-millay.mp3" preload="auto" playsinline></audio>
+  <audio id="yayAudio" src="assets/children-yay.mp3" preload="metadata" playsinline></audio>
+  <audio id="songAudio" src="assets/tum-millay.mp3" preload="metadata" playsinline></audio>
 
   <main class="app">
     <section class="screen active" id="splashScreen">
       <div>
-        <h1 class="hero-title">BIRTHDAY</h1>
-        <div class="hero-sub">Little surprise for my cutie ✦</div>
-        <div class="cover-tease"><img src="assets/cover-ref.webp" alt="cover"></div>
+        <img class="hero-cat" src="assets/birthday-cat.webp" alt="birthday cat" fetchpriority="high">
+        <h1 class="hero-title">HAPPY BIRTHDAY</h1>
+        <div class="hero-sub">My cute Guggu ♡</div>
+        <div class="cover-tease"><img src="assets/cover-ref.webp" alt="birthday cover" fetchpriority="high" decoding="async"></div>
       </div>
     </section>
 
@@ -258,15 +259,15 @@
     <section class="screen" id="memoriesScreen">
       <div class="card">
         <h2 class="title">Sweet Memories</h2>
-        <p class="subtitle memory-info">Swipe left or right to see the next picture ✨</p>
+        <p class="subtitle memory-info">Swipe the card left or right to revisit our moments ✨</p>
         <div class="memory-wrap">
           <div class="memory-card-wrap" id="memoryWrap">
             <div class="polaroid-back"></div>
             <div class="polaroid-back2"></div>
             <div class="memory-card" id="memoryCard">
-              <div class="memory-photo"><img id="memoryImg" src="assets/memory-01.webp" alt="memory"></div>
+              <div class="memory-photo"><img id="memoryImg" src="assets/memory-01.webp" alt="memory" decoding="async"></div>
               <div class="memory-caption" id="memoryCaption">Soft sunshine</div>
-              <div class="memory-note">A little click worth keeping.</div>
+              <div class="memory-note" id="memoryNote">1 of 6 · A moment worth keeping ♡</div>
             </div>
           </div>
         </div>
@@ -283,7 +284,7 @@
         <div class="obs-head">
           <h2 class="title">OBSESSION</h2>
           <div class="urdu">آبسیشن</div>
-          <p class="subtitle">Curved carousel of all the hand details you sent.</p>
+          <p class="subtitle">The little details that are completely you ♡</p>
         </div>
         <div class="obs-wrap">
           <div class="obs-stage" id="obsStage"></div>
@@ -371,8 +372,22 @@
   }
 
   const screens=[...document.querySelectorAll('.screen')];
-  const showScreen=id=>{screens.forEach(s=>s.classList.toggle('active',s.id===id)); setStickerSet(id); window.scrollTo({top:0,behavior:'auto'});};
-  setTimeout(()=>showScreen('unlockScreen'),1800);
+  document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
+  document.addEventListener('gesturechange',e=>e.preventDefault(),{passive:false});
+  const loadedImages=new Map();
+  function warmImage(src){
+    if(loadedImages.has(src)) return loadedImages.get(src);
+    const img=new Image(); img.decoding='async'; img.src=src;
+    const ready=img.decode ? img.decode().catch(()=>{}) : new Promise(resolve=>{img.onload=img.onerror=resolve;});
+    loadedImages.set(src,ready); return ready;
+  }
+  const showScreen=id=>{
+    screens.forEach(s=>s.classList.toggle('active',s.id===id));
+    setStickerSet(id); window.scrollTo({top:0,behavior:'auto'});
+    if(id==='memoriesScreen') memories.slice(0,3).forEach(x=>warmImage(x[0]));
+    if(id==='obsessionScreen') [obsIndex-1,obsIndex,obsIndex+1].forEach(i=>warmImage(obsImgs[(i+obsImgs.length)%obsImgs.length]));
+  };
+  setTimeout(()=>showScreen('unlockScreen'),5000);
 
   const stickerLayer=document.getElementById('stickerLayer');
   const stickerSets={
@@ -404,19 +419,22 @@
   }
   buildStickers(); setStickerSet('unlockScreen');
 
-  // audio priming
+  // Start fetching audio on the first real interaction. Avoid muted autoplay,
+  // which is unreliable on iOS and can steal the next intended sound.
   const yay=document.getElementById('yayAudio');
   const song=document.getElementById('songAudio');
   let mediaPrimed=false;
-  async function primeMedia(){
+  function primeMedia(){
     if(mediaPrimed) return; mediaPrimed=true;
-    try{ yay.volume=0; await yay.play(); yay.pause(); yay.currentTime=0; yay.volume=1; }catch(e){}
-    try{ song.volume=0; await song.play(); song.pause(); song.currentTime=0; song.volume=1; }catch(e){}
+    yay.load(); song.load();
   }
-  window.addEventListener('touchstart', primeMedia, {once:true, passive:true});
-  window.addEventListener('click', primeMedia, {once:true});
-  function playYay(){ yay.currentTime=0; yay.volume=1; yay.play().catch(()=>{}); celebrate(); }
-  function playSong(){ song.currentTime=0; song.volume=.92; song.play().catch(()=>{}); clearTimeout(window.songStop); window.songStop=setTimeout(()=>song.pause(),20000); }
+  window.addEventListener('pointerdown', primeMedia, {once:true, passive:true});
+  function restartAudio(audio,volume){
+    audio.pause(); audio.currentTime=0; audio.volume=volume;
+    const attempt=audio.play(); if(attempt) attempt.catch(()=>{});
+  }
+  function playYay(){ restartAudio(yay,1); celebrate(); }
+  function playSong(){ restartAudio(song,.92); clearTimeout(window.songStop); window.songStop=setTimeout(()=>song.pause(),20000); }
   let actx;
   function playSad(){
     try{
@@ -485,17 +503,32 @@
   const memories=[
     ['assets/memory-01.webp','Soft sunshine'],['assets/memory-02.webp','Cutie'],['assets/memory-03.webp','Graceful'],['assets/memory-04.webp','Lovely mirror'],['assets/memory-05.webp','Calm vibes'],['assets/memory-06.webp','Blooming wall']
   ];
-  let memIndex=0, startX=0, currentDx=0, dragging=false;
-  const memWrap=document.getElementById('memoryWrap'), memCard=document.getElementById('memoryCard'), memImg=document.getElementById('memoryImg'), memCaption=document.getElementById('memoryCaption');
-  function drawMem(){ memImg.src=memories[memIndex][0]; memCaption.textContent=memories[memIndex][1]; }
-  function switchMem(dir){
-    memCard.style.transition='transform .22s ease, opacity .22s ease';
-    memCard.style.transform=`translateX(${dir==='next'?-64:64}px) rotate(${dir==='next'?-8:8}deg)`; memCard.style.opacity='0';
-    setTimeout(()=>{ memIndex=(memIndex+(dir==='next'?1:-1)+memories.length)%memories.length; drawMem(); memCard.style.transition='none'; memCard.style.transform=`translateX(${dir==='next'?64:-64}px) rotate(${dir==='next'?8:-8}deg)`; memCard.style.opacity='0'; requestAnimationFrame(()=>{ memCard.style.transition='transform .26s ease, opacity .26s ease'; memCard.style.transform='translateX(0) rotate(0)'; memCard.style.opacity='1';}); },190);
+  let memIndex=0, startX=0, currentDx=0, dragging=false, memAnimating=false;
+  const memWrap=document.getElementById('memoryWrap'), memCard=document.getElementById('memoryCard'), memImg=document.getElementById('memoryImg'), memCaption=document.getElementById('memoryCaption'), memNote=document.getElementById('memoryNote');
+  function drawMem(){
+    memImg.src=memories[memIndex][0]; memCaption.textContent=memories[memIndex][1];
+    memNote.textContent=`${memIndex+1} of ${memories.length} · A moment worth keeping ♡`;
+    warmImage(memories[(memIndex+1)%memories.length][0]);
+  }
+  async function switchMem(dir){
+    if(memAnimating) return; memAnimating=true;
+    const outX=dir==='next'?-110:110, nextIndex=(memIndex+(dir==='next'?1:-1)+memories.length)%memories.length;
+    await warmImage(memories[nextIndex][0]);
+    memCard.style.transition='transform .24s ease-in, opacity .2s ease';
+    memCard.style.transform=`translateX(${outX}px) rotate(${outX/15}deg)`; memCard.style.opacity='0';
+    setTimeout(()=>{
+      memIndex=nextIndex; drawMem();
+      memCard.style.transition='none'; memCard.style.transform=`translateX(${-outX}px) rotate(${-outX/15}deg)`;
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        memCard.style.transition='transform .32s cubic-bezier(.2,.8,.2,1), opacity .24s ease';
+        memCard.style.transform='translateX(0) rotate(0)'; memCard.style.opacity='1';
+        setTimeout(()=>{memAnimating=false;},330);
+      }));
+    },210);
   }
   document.getElementById('prevMemory').onclick=()=>switchMem('prev');
   document.getElementById('nextMemory').onclick=()=>switchMem('next');
-  memCard.addEventListener('pointerdown',e=>{ dragging=true; startX=e.clientX; currentDx=0; memCard.classList.add('dragging'); memCard.setPointerCapture(e.pointerId); });
+  memCard.addEventListener('pointerdown',e=>{ if(memAnimating)return; dragging=true; startX=e.clientX; currentDx=0; memCard.classList.add('dragging'); memCard.setPointerCapture(e.pointerId); });
   memCard.addEventListener('pointermove',e=>{ if(!dragging) return; currentDx=e.clientX-startX; memCard.style.transform=`translateX(${currentDx}px) rotate(${currentDx/18}deg)`; });
   function endMemDrag(){ if(!dragging) return; dragging=false; memCard.classList.remove('dragging'); if(currentDx<-48) switchMem('next'); else if(currentDx>48) switchMem('prev'); else { memCard.style.transition='transform .2s ease'; memCard.style.transform='translateX(0) rotate(0)'; } }
   memCard.addEventListener('pointerup',endMemDrag); memCard.addEventListener('pointercancel',endMemDrag);
@@ -504,21 +537,30 @@
 
   // obsession carousel
   const obsImgs=[1,2,3,4,5,6,7,8,9].map(n=>`assets/obs-${String(n).padStart(2,'0')}.webp`);
-  let obsIndex=0, obsTouchStart=0;
+  let obsIndex=0, obsTouchStart=0, obsLocked=false;
   const obsStage=document.getElementById('obsStage'), obsCount=document.getElementById('obsCount');
-  function renderObs(){
-    obsStage.innerHTML='';
-    const prev=(obsIndex-1+obsImgs.length)%obsImgs.length, next=(obsIndex+1)%obsImgs.length;
-    const arr=[{i:prev,c:'prev'},{i:obsIndex,c:'active'},{i:next,c:'next'}];
-    arr.forEach(o=>{ const d=document.createElement('div'); d.className='obs-slide '+o.c; d.innerHTML=`<img src="${obsImgs[o.i]}" alt="obsession photo">`; obsStage.appendChild(d); });
+  function obsOffset(i){ let d=(i-obsIndex+obsImgs.length)%obsImgs.length; if(d>obsImgs.length/2)d-=obsImgs.length; return d; }
+  function renderObs(initial=false){
+    if(initial){
+      obsImgs.forEach((src,i)=>{ const d=document.createElement('div'); d.className='obs-slide'; d.dataset.index=i; d.innerHTML=`<img src="${src}" alt="obsession photo ${i+1}" loading="lazy" decoding="async">`; obsStage.appendChild(d); });
+    }
+    [...obsStage.children].forEach(d=>{
+      const offset=obsOffset(+d.dataset.index);
+      d.className='obs-slide '+(offset===0?'active':offset===-1?'prev':offset===1?'next':offset<0?'hidden-left':'hidden-right');
+    });
     obsCount.textContent=`${obsIndex+1} / ${obsImgs.length}`;
   }
-  function stepObs(dir){ obsIndex=(obsIndex+(dir==='next'?1:-1)+obsImgs.length)%obsImgs.length; renderObs(); }
+  function stepObs(dir){
+    if(obsLocked)return; obsLocked=true;
+    obsIndex=(obsIndex+(dir==='next'?1:-1)+obsImgs.length)%obsImgs.length; renderObs();
+    warmImage(obsImgs[(obsIndex+(dir==='next'?2:-2)+obsImgs.length)%obsImgs.length]);
+    setTimeout(()=>{obsLocked=false;},430);
+  }
   document.getElementById('obsPrev').onclick=()=>stepObs('prev'); document.getElementById('obsNext').onclick=()=>stepObs('next');
   obsStage.addEventListener('pointerdown',e=>{ obsTouchStart=e.clientX; });
   obsStage.addEventListener('pointerup',e=>{ const dx=e.clientX-obsTouchStart; if(dx>40) stepObs('prev'); else if(dx<-40) stepObs('next'); });
   document.getElementById('toPuzzleBtn').onclick=()=>showScreen('puzzleScreen');
-  renderObs();
+  renderObs(true);
 
   // puzzle game
   const puzzleSrc='assets/obs-05.webp';
@@ -526,34 +568,60 @@
   const puzzleStage=document.getElementById('puzzleStage');
   const swapCount=document.getElementById('swapCount'), gameState=document.getElementById('gameState');
   const finishBtn=document.getElementById('finishPuzzleBtn');
-  let order=[0,1,2,3,4,5,6,7,8], tapSelected=null, swaps=0, dragSource=null, ghost=null;
+  let order=[0,1,2,3,4,5,6,7,8], tapSelected=null, swaps=0, dragSource=null, ghost=null, puzzleGrid=null, puzzleLocked=false;
   function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } }
   function previewPuzzle(){ puzzleStage.innerHTML=`<div class="preview-card"><img src="${puzzleSrc}" alt="preview"></div>`; gameState.textContent='Preview mode'; finishBtn.style.display='none'; }
   function tileHtml(tileIndex){ const row=Math.floor(tileIndex/3), col=tileIndex%3; return `<img src="${puzzleSrc}" style="left:-${col*100}%;top:-${row*100}%">`; }
   function renderPuzzle(){
-    const grid=document.createElement('div'); grid.className='puzzle-grid';
+    const grid=document.createElement('div'); grid.className='puzzle-grid'; puzzleGrid=grid;
     order.forEach((tileIndex,pos)=>{
       const b=document.createElement('button'); b.className='piece'+(tapSelected===pos?' tap-selected':''); b.dataset.pos=pos; b.innerHTML=tileHtml(tileIndex);
       b.addEventListener('pointerdown',onPieceDown);
-      b.addEventListener('click',onPieceTap);
       grid.appendChild(b);
     });
     puzzleStage.innerHTML=''; puzzleStage.appendChild(grid); gameState.textContent='Drag a piece onto another piece';
   }
   function checkSolved(){ if(order.every((v,i)=>v===i)){ gameState.textContent='Solved!'; finishBtn.style.display='inline-flex'; playYay(); return true; } return false; }
-  function swapPieces(a,b){ [order[a],order[b]]=[order[b],order[a]]; swaps++; swapCount.textContent='Swaps: '+swaps; tapSelected=null; renderPuzzle(); checkSolved(); }
-  function onPieceTap(e){ const pos=+e.currentTarget.dataset.pos; if(dragSource!==null) return; if(tapSelected===null){ tapSelected=pos; renderPuzzle(); } else if(tapSelected===pos){ tapSelected=null; renderPuzzle(); } else { swapPieces(tapSelected,pos); } }
+  function updatePuzzleSelection(){ if(!puzzleGrid)return; [...puzzleGrid.children].forEach((p,i)=>p.classList.toggle('tap-selected',tapSelected===i)); }
+  function swapPieces(a,b){
+    if(puzzleLocked||a===b)return; puzzleLocked=true;
+    const pieces=[...puzzleGrid.children], first=pieces[a], second=pieces[b];
+    first.classList.add('swapping'); second.classList.add('swapping');
+    setTimeout(()=>{
+      [order[a],order[b]]=[order[b],order[a]]; first.innerHTML=tileHtml(order[a]); second.innerHTML=tileHtml(order[b]);
+      swaps++; swapCount.textContent='Swaps: '+swaps; tapSelected=null; updatePuzzleSelection();
+      requestAnimationFrame(()=>{first.classList.remove('swapping');second.classList.remove('swapping');});
+      setTimeout(()=>{puzzleLocked=false;checkSolved();},230);
+    },120);
+  }
+  function tapPiece(pos){
+    if(puzzleLocked)return;
+    if(tapSelected===null)tapSelected=pos; else if(tapSelected===pos)tapSelected=null; else return swapPieces(tapSelected,pos);
+    updatePuzzleSelection();
+  }
   function makeGhost(srcPos, pointX, pointY){
     const tileIndex=order[srcPos];
     const g=document.createElement('div'); g.className='ghost'; g.innerHTML=tileHtml(tileIndex); document.body.appendChild(g); g.style.left=pointX+'px'; g.style.top=pointY+'px'; return g;
   }
   function onPieceDown(e){
-    e.preventDefault(); dragSource=+e.currentTarget.dataset.pos; tapSelected=null;
-    const el=e.currentTarget; el.classList.add('drag-source'); ghost=makeGhost(dragSource, e.clientX, e.clientY);
-    function move(ev){ if(ghost){ ghost.style.left=ev.clientX+'px'; ghost.style.top=ev.clientY+'px'; } const tgt=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('.piece'); document.querySelectorAll('.piece').forEach(p=>p.classList.remove('over')); if(tgt && +tgt.dataset.pos!==dragSource) tgt.classList.add('over'); }
-    function up(ev){ document.removeEventListener('pointermove',move); document.removeEventListener('pointerup',up); document.querySelectorAll('.piece').forEach(p=>p.classList.remove('over','drag-source')); if(ghost){ ghost.remove(); ghost=null; }
-      const tgt=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('.piece'); const tgtPos=tgt?+tgt.dataset.pos:null; const source=dragSource; dragSource=null; if(tgtPos!==null && tgtPos!==source) swapPieces(source,tgtPos); else renderPuzzle(); }
-    document.addEventListener('pointermove',move); document.addEventListener('pointerup',up,{once:true});
+    if(puzzleLocked)return; e.preventDefault();
+    const source=+e.currentTarget.dataset.pos, el=e.currentTarget, sx=e.clientX, sy=e.clientY; let moved=false;
+    el.setPointerCapture(e.pointerId);
+    function move(ev){
+      if(!moved && Math.hypot(ev.clientX-sx,ev.clientY-sy)>7){ moved=true; dragSource=source; tapSelected=null; updatePuzzleSelection(); el.classList.add('drag-source'); ghost=makeGhost(source,ev.clientX,ev.clientY); }
+      if(!moved)return;
+      if(ghost){ghost.style.left=ev.clientX+'px';ghost.style.top=ev.clientY+'px';}
+      const tgt=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('.piece');
+      [...puzzleGrid.children].forEach(p=>p.classList.remove('over')); if(tgt&&+tgt.dataset.pos!==source)tgt.classList.add('over');
+    }
+    function up(ev){
+      el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up); el.removeEventListener('pointercancel',up);
+      [...puzzleGrid.children].forEach(p=>p.classList.remove('over','drag-source')); if(ghost){ghost.remove();ghost=null;}
+      if(!moved){dragSource=null;tapPiece(source);return;}
+      const tgt=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('.piece'), target=tgt?+tgt.dataset.pos:null; dragSource=null;
+      if(target!==null&&target!==source)swapPieces(source,target);
+    }
+    el.addEventListener('pointermove',move); el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
   }
   document.getElementById('startPuzzleBtn').onclick=()=>{ order=[0,1,2,3,4,5,6,7,8]; shuffle(order); if(order.every((v,i)=>v===i)) [order[0],order[1]]=[order[1],order[0]]; swaps=0; swapCount.textContent='Swaps: 0'; tapSelected=null; renderPuzzle(); };
   document.getElementById('finishPuzzleBtn').onclick=()=>showScreen('mailScreen');
